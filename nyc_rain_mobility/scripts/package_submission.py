@@ -51,13 +51,15 @@ def run_git(args: list[str]) -> str | None:
 
 
 def git_info() -> dict[str, Any]:
-    status = run_git(["status", "--short"]) or ""
+    tracked_status = run_git(["status", "--short", "--untracked-files=no"]) or ""
+    all_status = run_git(["status", "--short"]) or ""
     return {
         "commit": run_git(["rev-parse", "HEAD"]),
         "branch": run_git(["branch", "--show-current"]),
         "remote_origin": run_git(["remote", "get-url", "origin"]),
-        "dirty": bool(status),
-        "status_short": status.splitlines(),
+        "dirty": bool(tracked_status),
+        "status_short": tracked_status.splitlines(),
+        "untracked_files": [line[3:] for line in all_status.splitlines() if line.startswith("?? ")],
     }
 
 
