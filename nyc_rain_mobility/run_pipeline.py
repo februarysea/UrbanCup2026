@@ -21,6 +21,7 @@ STAGES = [
     "configs",
     "simulate",
     "metrics",
+    "report",
 ]
 
 
@@ -72,8 +73,9 @@ def main() -> None:
             run_script("simulate_policy.py", extra)
         elif stage == "metrics":
             run_script("evaluate_policy.py", [])
+        elif stage == "report":
+            run_script("generate_report.py", [])
 
 
 if __name__ == "__main__":
     main()
-

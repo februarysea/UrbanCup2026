@@ -19,6 +19,7 @@ This project studies how rainstorms change travel decisions in New York City bef
 5. `configs`: generate AgentSociety2 `init_config.json` and `steps.yaml` for policy scenarios.
 6. `simulate`: run a deterministic policy simulator for fast validation without LLM calls.
 7. `metrics`: evaluate scenario outcomes and policy tradeoffs.
+8. `report`: generate charts and a Markdown report draft.
 
 ## Quick Dry Run
 
@@ -77,12 +78,15 @@ The default output locations are:
 - `hypothesis_1/experiment_*/init/steps.yaml`
 - `hypothesis_1/experiment_*/run/simulated_decisions.csv`
 - `presentation/tables/policy_metrics.csv`
+- `presentation/charts/*.png`
+- `presentation/report.md`
 
 ## Real Data Utilities
 
 - `scripts/download_real_data.py`: lists or downloads Citi Bike, TLC taxi, MTA subway, weather, and taxi zone GeoJSON inputs.
 - `scripts/generate_zone_maps.py`: spatially joins Citi Bike and MTA station coordinates to taxi zones using `shapely`.
 - `scripts/build_zone_hour_panel.py`: chunk-reads large Citi Bike CSV/ZIP files to avoid loading full monthly files at once.
+- `scripts/generate_report.py`: creates report charts and `presentation/report.md` from current pipeline outputs.
 
 ## AgentSociety2 Integration
 

@@ -54,6 +54,12 @@ Then run:
 python nyc_rain_mobility/run_pipeline.py --stage all
 ```
 
+The report draft is written to:
+
+```text
+nyc_rain_mobility/presentation/report.md
+```
+
 ## 4. AgentSociety2 Scenario Run
 
 After config generation, run a scenario with:
