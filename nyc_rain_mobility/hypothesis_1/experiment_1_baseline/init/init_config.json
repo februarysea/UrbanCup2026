@@ -1,0 +1,211 @@
+{
+  "env_modules": [
+    {
+      "module_type": "RainMobilityEnv",
+      "kwargs": {
+        "panel_path": "data/processed/panel_labeled.csv",
+        "events_path": "data/processed/rain_events.json",
+        "agent_population_path": "config/agent_population.json",
+        "scenario": "baseline",
+        "decision_log_path": "hypothesis_1/experiment_1_baseline/run/agent_decisions.jsonl"
+      }
+    }
+  ],
+  "agents": [
+    {
+      "agent_id": 1,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 1,
+        "name": "Traveler-001",
+        "profile": "You are Traveler-001, a New York City traveler. Archetype: bike_leisure_user. Home taxi zone: 103. Destination taxi zone: 103. Trip purpose: leisure. Preferred mode: bike. Rain sensitivity: 0.919. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.473. Schedule flexibility: 0.876. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "bike_leisure_user",
+        "home_zone": "103",
+        "destination_zone": "103",
+        "trip_purpose": "leisure",
+        "preferred_mode": "bike",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 2,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 2,
+        "name": "Traveler-002",
+        "profile": "You are Traveler-002, a New York City traveler. Archetype: bike_commuter. Home taxi zone: 101. Destination taxi zone: 101. Trip purpose: commute. Preferred mode: bike. Rain sensitivity: 0.462. Subway accessibility: 0.87. Taxi availability: 1.0. Cost sensitivity: 0.426. Schedule flexibility: 0.305. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "bike_commuter",
+        "home_zone": "101",
+        "destination_zone": "101",
+        "trip_purpose": "commute",
+        "preferred_mode": "bike",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 3,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 3,
+        "name": "Traveler-003",
+        "profile": "You are Traveler-003, a New York City traveler. Archetype: taxi_substituter. Home taxi zone: 101. Destination taxi zone: 101. Trip purpose: errand. Preferred mode: taxi. Rain sensitivity: 0.679. Subway accessibility: 0.87. Taxi availability: 1.0. Cost sensitivity: 0.213. Schedule flexibility: 0.275. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "taxi_substituter",
+        "home_zone": "101",
+        "destination_zone": "101",
+        "trip_purpose": "errand",
+        "preferred_mode": "taxi",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 4,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 4,
+        "name": "Traveler-004",
+        "profile": "You are Traveler-004, a New York City traveler. Archetype: subway_substituter. Home taxi zone: 103. Destination taxi zone: 101. Trip purpose: commute. Preferred mode: subway. Rain sensitivity: 0.604. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.634. Schedule flexibility: 0.252. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "subway_substituter",
+        "home_zone": "103",
+        "destination_zone": "101",
+        "trip_purpose": "commute",
+        "preferred_mode": "subway",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 5,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 5,
+        "name": "Traveler-005",
+        "profile": "You are Traveler-005, a New York City traveler. Archetype: subway_substituter. Home taxi zone: 103. Destination taxi zone: 103. Trip purpose: commute. Preferred mode: subway. Rain sensitivity: 0.606. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.559. Schedule flexibility: 0.245. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "subway_substituter",
+        "home_zone": "103",
+        "destination_zone": "103",
+        "trip_purpose": "commute",
+        "preferred_mode": "subway",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 6,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 6,
+        "name": "Traveler-006",
+        "profile": "You are Traveler-006, a New York City traveler. Archetype: bike_leisure_user. Home taxi zone: 103. Destination taxi zone: 101. Trip purpose: leisure. Preferred mode: bike. Rain sensitivity: 0.818. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.518. Schedule flexibility: 0.585. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "bike_leisure_user",
+        "home_zone": "103",
+        "destination_zone": "101",
+        "trip_purpose": "leisure",
+        "preferred_mode": "bike",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 7,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 7,
+        "name": "Traveler-007",
+        "profile": "You are Traveler-007, a New York City traveler. Archetype: subway_substituter. Home taxi zone: 103. Destination taxi zone: 101. Trip purpose: commute. Preferred mode: subway. Rain sensitivity: 0.44. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.468. Schedule flexibility: 0.351. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "subway_substituter",
+        "home_zone": "103",
+        "destination_zone": "101",
+        "trip_purpose": "commute",
+        "preferred_mode": "subway",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 8,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 8,
+        "name": "Traveler-008",
+        "profile": "You are Traveler-008, a New York City traveler. Archetype: bike_leisure_user. Home taxi zone: 101. Destination taxi zone: 101. Trip purpose: leisure. Preferred mode: bike. Rain sensitivity: 0.93. Subway accessibility: 0.87. Taxi availability: 1.0. Cost sensitivity: 0.429. Schedule flexibility: 0.674. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "bike_leisure_user",
+        "home_zone": "101",
+        "destination_zone": "101",
+        "trip_purpose": "leisure",
+        "preferred_mode": "bike",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 9,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 9,
+        "name": "Traveler-009",
+        "profile": "You are Traveler-009, a New York City traveler. Archetype: subway_substituter. Home taxi zone: 103. Destination taxi zone: 101. Trip purpose: commute. Preferred mode: subway. Rain sensitivity: 0.607. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.511. Schedule flexibility: 0.371. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "subway_substituter",
+        "home_zone": "103",
+        "destination_zone": "101",
+        "trip_purpose": "commute",
+        "preferred_mode": "subway",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 10,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 10,
+        "name": "Traveler-010",
+        "profile": "You are Traveler-010, a New York City traveler. Archetype: bike_leisure_user. Home taxi zone: 103. Destination taxi zone: 101. Trip purpose: leisure. Preferred mode: bike. Rain sensitivity: 0.886. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.487. Schedule flexibility: 0.888. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "bike_leisure_user",
+        "home_zone": "103",
+        "destination_zone": "101",
+        "trip_purpose": "leisure",
+        "preferred_mode": "bike",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 11,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 11,
+        "name": "Traveler-011",
+        "profile": "You are Traveler-011, a New York City traveler. Archetype: taxi_substituter. Home taxi zone: 103. Destination taxi zone: 101. Trip purpose: errand. Preferred mode: taxi. Rain sensitivity: 0.666. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.247. Schedule flexibility: 0.276. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "taxi_substituter",
+        "home_zone": "103",
+        "destination_zone": "101",
+        "trip_purpose": "errand",
+        "preferred_mode": "taxi",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    },
+    {
+      "agent_id": 12,
+      "agent_type": "PersonAgent",
+      "kwargs": {
+        "id": 12,
+        "name": "Traveler-012",
+        "profile": "You are Traveler-012, a New York City traveler. Archetype: bike_leisure_user. Home taxi zone: 103. Destination taxi zone: 103. Trip purpose: leisure. Preferred mode: bike. Rain sensitivity: 0.902. Subway accessibility: 1.0. Taxi availability: 0.5. Cost sensitivity: 0.411. Schedule flexibility: 0.588. Policy scenario: baseline. At each step, observe the rain mobility context and choose travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway.",
+        "archetype": "bike_leisure_user",
+        "home_zone": "103",
+        "destination_zone": "103",
+        "trip_purpose": "leisure",
+        "preferred_mode": "bike",
+        "max_react_turns": 5,
+        "enable_memory": false
+      }
+    }
+  ],
+  "codegen_router": {
+    "final_summary_enabled": true
+  }
+}

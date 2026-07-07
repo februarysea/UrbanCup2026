@@ -1,0 +1,10 @@
+transit_timestamp,station_complex_id,station_complex,borough,ridership
+2024-07-10 07:00:00,M1,34 St-Herald Sq,M,1200
+2024-07-10 08:00:00,M1,34 St-Herald Sq,M,1600
+2024-07-10 10:00:00,M2,Grand Central-42 St,M,1800
+2024-07-10 13:00:00,M2,Grand Central-42 St,M,1300
+2024-07-11 07:00:00,M1,34 St-Herald Sq,M,1350
+2024-07-11 08:00:00,M1,34 St-Herald Sq,M,1850
+2024-07-11 09:00:00,M2,Grand Central-42 St,M,2100
+2024-07-11 18:00:00,M2,Grand Central-42 St,M,1700
+

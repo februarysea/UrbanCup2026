@@ -1,0 +1,21 @@
+# Local framework checkout / nested repository
+agentsociety/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Large or generated experiment data
+nyc_rain_mobility/data/raw/*
+nyc_rain_mobility/data/interim/*
+nyc_rain_mobility/data/processed/*
+nyc_rain_mobility/hypothesis_1/*/run/*
+nyc_rain_mobility/presentation/charts/*
+nyc_rain_mobility/presentation/tables/*
+
+# Keep curated sample data and source files
+!nyc_rain_mobility/data/sample/**
+!nyc_rain_mobility/**/.gitkeep
+

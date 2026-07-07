@@ -1,0 +1,5 @@
+zone_id,median_household_income,no_vehicle_share,transit_commute_share,low_income_share
+101,85000,0.70,0.62,0.22
+102,62000,0.58,0.48,0.36
+103,110000,0.45,0.55,0.14
+

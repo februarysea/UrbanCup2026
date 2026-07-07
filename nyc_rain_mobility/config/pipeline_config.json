@@ -1,0 +1,41 @@
+{
+  "study": {
+    "city": "New York City",
+    "year": 2024,
+    "months": [6, 7, 8, 9],
+    "spatial_unit": "taxi_zone",
+    "time_unit": "hour"
+  },
+  "rainstorm": {
+    "rain_threshold_mm_per_hour": 2.5,
+    "min_consecutive_rain_hours": 1,
+    "pre_window_hours": 24,
+    "post_window_hours": 24,
+    "control_max_precipitation_mm_per_hour": 0.1
+  },
+  "simulation": {
+    "num_agents": 80,
+    "seed": 20260707,
+    "tick_seconds": 3600,
+    "max_hours": 72
+  },
+  "scenarios": {
+    "experiment_1_baseline": {
+      "policy": "baseline",
+      "description": "Observed rainstorm behavior without additional policy intervention."
+    },
+    "experiment_2_early_warning": {
+      "policy": "early_warning",
+      "description": "Advance rainstorm warning increases delay and non-bike alternatives."
+    },
+    "experiment_3_transit_guidance": {
+      "policy": "transit_guidance",
+      "description": "Warning plus subway guidance increases bike-to-subway substitution."
+    },
+    "experiment_4_taxi_support": {
+      "policy": "taxi_support",
+      "description": "Targeted taxi supply support improves low-alternative-zone completion."
+    }
+  }
+}
+

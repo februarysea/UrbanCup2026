@@ -1,0 +1,35 @@
+{
+  "citibike": {
+    "source": "https://citibikenyc.com/system-data",
+    "raw_glob": "data/raw/citibike*.csv*",
+    "sample_glob": "data/sample/citibike_trips.csv"
+  },
+  "taxi": {
+    "source": "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page",
+    "raw_glob": "data/raw/taxi*.csv*",
+    "sample_glob": "data/sample/taxi_yellow.csv"
+  },
+  "mta": {
+    "source": "https://data.ny.gov/Transportation/MTA-Subway-Hourly-Ridership-2020-2024/wujg-7c2s",
+    "raw_glob": "data/raw/mta_hourly*.csv*",
+    "sample_glob": "data/sample/mta_hourly.csv"
+  },
+  "weather": {
+    "source": "https://open-meteo.com/en/docs/historical-weather-api",
+    "raw_glob": "data/raw/weather_hourly*.csv*",
+    "sample_glob": "data/sample/weather_hourly.csv"
+  },
+  "bike_station_zone_map": {
+    "raw_glob": "config/station_zone_map_bike.csv",
+    "sample_glob": "data/sample/station_zone_map_bike.csv"
+  },
+  "mta_station_zone_map": {
+    "raw_glob": "config/station_zone_map_mta.csv",
+    "sample_glob": "data/sample/station_zone_map_mta.csv"
+  },
+  "acs_zone_features": {
+    "raw_glob": "config/acs_zone_features.csv",
+    "sample_glob": "data/sample/acs_zone_features.csv"
+  }
+}
+
