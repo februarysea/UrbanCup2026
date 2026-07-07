@@ -16,6 +16,7 @@ nyc_rain_mobility/hypothesis_1/*/run/*
 nyc_rain_mobility/presentation/charts/*
 nyc_rain_mobility/presentation/tables/*
 nyc_rain_mobility/presentation/report.html
+nyc_rain_mobility/submission_bundle/
 
 # Keep curated sample data and source files
 !nyc_rain_mobility/data/sample/**

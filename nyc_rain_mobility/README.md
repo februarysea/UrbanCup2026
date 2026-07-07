@@ -86,6 +86,7 @@ The default output locations are:
 - `presentation/charts/*.png`
 - `presentation/report.md`
 - `presentation/tables/validation_summary.json`
+- `submission_bundle/<submission_name>_<timestamp>/`
 
 ## Real Data Utilities
 
@@ -94,6 +95,23 @@ The default output locations are:
 - `scripts/build_zone_hour_panel.py`: chunk-reads large Citi Bike CSV/ZIP files to avoid loading full monthly files at once.
 - `scripts/generate_report.py`: creates report charts and `presentation/report.md` from current pipeline outputs.
 - `scripts/validate_pipeline.py`: checks data schemas, required outputs, generated configs, charts, report files, and AgentSociety2 custom-module wiring.
+- `scripts/package_submission.py`: creates a lightweight Urban Cup bundle with report, workspace code, sample data, init configs, charts, tables, and manifest.
+
+## Submission Bundle
+
+After running and validating the pipeline, create an upload-ready bundle:
+
+```bash
+AGENTSOCIETY_LLM_API_KEY=test-key \
+python nyc_rain_mobility/run_pipeline.py --sample --stage validate
+python nyc_rain_mobility/scripts/package_submission.py \
+  --competition event3 \
+  --team-name team_name \
+  --work-name nyc_rain_mobility \
+  --zip
+```
+
+The bundle excludes raw public mobility files by default because they are large and reproducible through `download_real_data.py`.
 
 ## AgentSociety2 Integration
 

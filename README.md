@@ -8,3 +8,7 @@ Current experiment:
 
 The `agentsociety/` directory is treated as a local framework dependency and is not committed in this root competition repository.
 
+Useful entrypoints:
+
+- `python nyc_rain_mobility/run_pipeline.py --sample --stage all`
+- `python nyc_rain_mobility/scripts/package_submission.py --zip`

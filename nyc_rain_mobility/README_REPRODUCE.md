@@ -67,6 +67,16 @@ AGENTSOCIETY_LLM_API_KEY=test-key \
 python nyc_rain_mobility/scripts/validate_pipeline.py --sample --check all
 ```
 
+Create a lightweight submission bundle:
+
+```bash
+python nyc_rain_mobility/scripts/package_submission.py \
+  --competition event3 \
+  --team-name team_name \
+  --work-name nyc_rain_mobility \
+  --zip
+```
+
 Validate the AgentSociety2 custom environment discovery path:
 
 ```bash
