@@ -22,6 +22,7 @@ STAGES = [
     "simulate",
     "metrics",
     "report",
+    "validate",
 ]
 
 
@@ -75,6 +76,9 @@ def main() -> None:
             run_script("evaluate_policy.py", [])
         elif stage == "report":
             run_script("generate_report.py", [])
+        elif stage == "validate":
+            extra = sample_flag[:]
+            run_script("validate_pipeline.py", extra)
 
 
 if __name__ == "__main__":

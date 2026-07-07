@@ -60,6 +60,12 @@ The report draft is written to:
 nyc_rain_mobility/presentation/report.md
 ```
 
+Validate inputs and generated outputs:
+
+```bash
+python nyc_rain_mobility/scripts/validate_pipeline.py --sample --check all
+```
+
 ## 4. AgentSociety2 Scenario Run
 
 After config generation, run a scenario with:

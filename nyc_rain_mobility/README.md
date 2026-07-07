@@ -20,6 +20,7 @@ This project studies how rainstorms change travel decisions in New York City bef
 6. `simulate`: run a deterministic policy simulator for fast validation without LLM calls.
 7. `metrics`: evaluate scenario outcomes and policy tradeoffs.
 8. `report`: generate charts and a Markdown report draft.
+9. `validate`: check required inputs and generated outputs.
 
 ## Quick Dry Run
 
@@ -80,6 +81,7 @@ The default output locations are:
 - `presentation/tables/policy_metrics.csv`
 - `presentation/charts/*.png`
 - `presentation/report.md`
+- `presentation/tables/validation_summary.json`
 
 ## Real Data Utilities
 
@@ -87,6 +89,7 @@ The default output locations are:
 - `scripts/generate_zone_maps.py`: spatially joins Citi Bike and MTA station coordinates to taxi zones using `shapely`.
 - `scripts/build_zone_hour_panel.py`: chunk-reads large Citi Bike CSV/ZIP files to avoid loading full monthly files at once.
 - `scripts/generate_report.py`: creates report charts and `presentation/report.md` from current pipeline outputs.
+- `scripts/validate_pipeline.py`: checks data schemas, required outputs, generated configs, charts, and report files.
 
 ## AgentSociety2 Integration
 
