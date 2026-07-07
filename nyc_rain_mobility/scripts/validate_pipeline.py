@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import csv
 import json
+import sys
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -260,6 +263,99 @@ def validate_outputs() -> list[Check]:
     return checks
 
 
+def validate_platform() -> list[Check]:
+    checks: list[Check] = []
+    workspace_root = PROJECT_DIR.parent
+    env_path = workspace_root / "custom" / "envs" / "rain_mobility_env.py"
+    metadata_path = workspace_root / ".agentsociety" / "env_modules" / "rainmobilityenv.json"
+    compatibility_path = PROJECT_DIR / "custom" / "envs" / "rain_mobility_env.py"
+
+    checks.append(_check_file(env_path, "platform:custom_env_file"))
+    if env_path.exists():
+        text = env_path.read_text(encoding="utf-8")
+        if "class RainMobilityEnv(EnvBase)" in text:
+            checks.append(_ok("platform:custom_env_class", "RainMobilityEnv directly inherits EnvBase"))
+        else:
+            checks.append(_fail("platform:custom_env_class", "RainMobilityEnv EnvBase class definition not found"))
+        if '"status": "ok"' in text:
+            checks.append(_ok("platform:write_tool_status", "write tool returns status=ok"))
+        else:
+            checks.append(_fail("platform:write_tool_status", "record_travel_decision should return status=ok"))
+
+    checks.append(_check_file(metadata_path, "platform:env_metadata"))
+    if metadata_path.exists():
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            expected = "custom/envs/rain_mobility_env.py"
+            if metadata.get("class_name") == "RainMobilityEnv" and metadata.get("module_path") == expected:
+                checks.append(_ok("platform:env_metadata:content", f"metadata points to {expected}"))
+            else:
+                checks.append(
+                    _fail(
+                        "platform:env_metadata:content",
+                        f"unexpected metadata class/module: {metadata.get('class_name')}, {metadata.get('module_path')}",
+                    )
+                )
+        except Exception as exc:
+                checks.append(_fail("platform:env_metadata:json", f"invalid JSON: {exc}"))
+
+    checks.append(_check_file(compatibility_path, "platform:project_env_compat_import"))
+    checks.extend(_check_env_runtime_smoke(workspace_root))
+    return checks
+
+
+def _check_env_runtime_smoke(workspace_root: Path) -> list[Check]:
+    checks: list[Check] = []
+    workspace_str = str(workspace_root)
+    if workspace_str not in sys.path:
+        sys.path.insert(0, workspace_str)
+
+    try:
+        from custom.envs.rain_mobility_env import RainMobilityEnv
+    except Exception as exc:
+        return [
+            _fail(
+                "platform:runtime_import",
+                f"skipped runtime smoke because RainMobilityEnv import failed: {exc}",
+                severity="warning",
+            )
+        ]
+
+    config_path = PROJECT_DIR / "hypothesis_1" / "experiment_1_baseline" / "init" / "init_config.json"
+    if not config_path.exists():
+        return [_fail("platform:runtime_config", f"missing baseline config: {config_path}", severity="warning")]
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        env_config = config["env_modules"][0]
+        kwargs = dict(env_config.get("kwargs", {}))
+        kwargs["decision_log_path"] = ""
+
+        async def _run() -> tuple[dict[str, Any], dict[str, Any]]:
+            env = RainMobilityEnv(**kwargs)
+            await env.init(datetime.fromisoformat("2024-07-01T00:00:00"))
+            context = await env.observe_mobility_context(agent_id=1)
+            result = await env.record_travel_decision(
+                agent_id=1,
+                decision="delay",
+                mode="none",
+                reason="pipeline validation smoke test",
+            )
+            return context, result
+
+        context, result = asyncio.run(_run())
+        if context.get("agent_id") == 1 and "rain_phase" in context:
+            checks.append(_ok("platform:runtime_observe", "observe_mobility_context returned agent context"))
+        else:
+            checks.append(_fail("platform:runtime_observe", f"unexpected context: {context}"))
+        if result.get("status") == "ok":
+            checks.append(_ok("platform:runtime_record", "record_travel_decision returned status=ok"))
+        else:
+            checks.append(_fail("platform:runtime_record", f"unexpected result: {result}"))
+    except Exception as exc:
+        checks.append(_fail("platform:runtime_smoke", f"runtime smoke failed: {exc}"))
+    return checks
+
+
 def write_summary(checks: list[Check], output: Path) -> None:
     summary = {
         "total": len(checks),
@@ -277,7 +373,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample", action="store_true", help="Validate bundled sample inputs instead of raw inputs.")
     parser.add_argument(
         "--check",
-        choices=["all", "inputs", "outputs"],
+        choices=["all", "inputs", "outputs", "platform"],
         default="all",
         help="Validation scope.",
     )
@@ -292,6 +388,8 @@ def main() -> None:
         checks.extend(validate_inputs(sample=args.sample))
     if args.check in {"all", "outputs"}:
         checks.extend(validate_outputs())
+    if args.check in {"all", "platform"}:
+        checks.extend(validate_platform())
     write_summary(checks, args.output)
     for check in checks:
         status = "OK" if check.ok else check.severity.upper()
@@ -304,4 +402,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

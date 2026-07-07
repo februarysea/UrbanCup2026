@@ -1,0 +1,9 @@
+{
+  "type": "RainMobilityEnv",
+  "class_name": "RainMobilityEnv",
+  "description": "NYC rainstorm mobility environment for bike, taxi, and subway mode-choice decisions.",
+  "init_description": "RainMobilityEnv initialization.\n\nParameters:\n- panel_path (str): CSV with zone-hour mobility/weather context.\n- events_path (str): JSON rainstorm event metadata.\n- agent_population_path (str): JSON synthesized traveler archetypes.\n- scenario (str): baseline, early_warning, transit_guidance, or taxi_support.\n- decision_log_path (str): JSONL path for agent decisions.\n\nAgents should call observe_mobility_context(agent_id) and then record_travel_decision(...).\n",
+  "is_custom": true,
+  "module_path": "custom/envs/rain_mobility_env.py",
+  "file_path": "custom/envs/rain_mobility_env.py"
+}

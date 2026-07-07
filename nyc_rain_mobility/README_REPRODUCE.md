@@ -63,7 +63,21 @@ nyc_rain_mobility/presentation/report.md
 Validate inputs and generated outputs:
 
 ```bash
+AGENTSOCIETY_LLM_API_KEY=test-key \
 python nyc_rain_mobility/scripts/validate_pipeline.py --sample --check all
+```
+
+Validate the AgentSociety2 custom environment discovery path:
+
+```bash
+cd agentsociety
+AGENTSOCIETY_LLM_API_KEY=test-key \
+PYTHONPATH=packages/agentsociety2:.. \
+uv run python extension/skills/agentsociety-create-env-module/v1.0.0/scripts/validate.py \
+  --workspace .. \
+  --file custom/envs/rain_mobility_env.py \
+  --class-name RainMobilityEnv \
+  --json
 ```
 
 ## 4. AgentSociety2 Scenario Run

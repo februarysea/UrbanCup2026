@@ -20,7 +20,7 @@ This project studies how rainstorms change travel decisions in New York City bef
 6. `simulate`: run a deterministic policy simulator for fast validation without LLM calls.
 7. `metrics`: evaluate scenario outcomes and policy tradeoffs.
 8. `report`: generate charts and a Markdown report draft.
-9. `validate`: check required inputs and generated outputs.
+9. `validate`: check required inputs, generated outputs, and AgentSociety2 custom-module wiring.
 
 ## Quick Dry Run
 
@@ -28,6 +28,8 @@ The sample data is tiny and only proves the pipeline works end to end.
 
 ```bash
 python nyc_rain_mobility/run_pipeline.py --sample --stage all
+AGENTSOCIETY_LLM_API_KEY=test-key \
+python nyc_rain_mobility/run_pipeline.py --sample --stage validate
 ```
 
 If you want to run inside the AgentSociety2 `uv` environment:
@@ -36,6 +38,8 @@ If you want to run inside the AgentSociety2 `uv` environment:
 cd agentsociety
 uv sync
 uv run python ../nyc_rain_mobility/run_pipeline.py --sample --stage all
+AGENTSOCIETY_LLM_API_KEY=test-key \
+uv run python ../nyc_rain_mobility/run_pipeline.py --sample --stage validate
 ```
 
 ## Real Data Run
@@ -89,14 +93,29 @@ The default output locations are:
 - `scripts/generate_zone_maps.py`: spatially joins Citi Bike and MTA station coordinates to taxi zones using `shapely`.
 - `scripts/build_zone_hour_panel.py`: chunk-reads large Citi Bike CSV/ZIP files to avoid loading full monthly files at once.
 - `scripts/generate_report.py`: creates report charts and `presentation/report.md` from current pipeline outputs.
-- `scripts/validate_pipeline.py`: checks data schemas, required outputs, generated configs, charts, and report files.
+- `scripts/validate_pipeline.py`: checks data schemas, required outputs, generated configs, charts, report files, and AgentSociety2 custom-module wiring.
 
 ## AgentSociety2 Integration
 
-Generated configs use a custom environment module:
+Generated configs use a workspace-level custom environment module so AgentSociety2's default scanner can discover it:
 
 ```text
-nyc_rain_mobility/custom/envs/rain_mobility_env.py
+custom/envs/rain_mobility_env.py
+```
+
+The project-level path `nyc_rain_mobility/custom/envs/rain_mobility_env.py` remains as a compatibility import.
+
+Validate the custom environment with AgentSociety2's local validator:
+
+```bash
+cd agentsociety
+AGENTSOCIETY_LLM_API_KEY=test-key \
+PYTHONPATH=packages/agentsociety2:.. \
+uv run python extension/skills/agentsociety-create-env-module/v1.0.0/scripts/validate.py \
+  --workspace .. \
+  --file custom/envs/rain_mobility_env.py \
+  --class-name RainMobilityEnv \
+  --json
 ```
 
 Run an AgentSociety2 scenario after setting LLM credentials:

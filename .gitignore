@@ -8,6 +8,7 @@ __pycache__/
 .pytest_cache/
 
 # Large or generated experiment data
+.agentsociety/custom_env_skill/runs/
 nyc_rain_mobility/data/raw/*
 nyc_rain_mobility/data/interim/*
 nyc_rain_mobility/data/processed/*
