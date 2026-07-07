@@ -26,7 +26,29 @@ uv run python ../nyc_rain_mobility/run_pipeline.py --sample --stage all
 
 ## 3. Full Data Run
 
-Place raw datasets in `nyc_rain_mobility/data/raw/` and mapping files in `nyc_rain_mobility/config/`, then run:
+Inspect real data URLs and expected file sizes:
+
+```bash
+python nyc_rain_mobility/scripts/download_real_data.py \
+  --year 2024 --months 7
+```
+
+Download one pilot month:
+
+```bash
+python nyc_rain_mobility/scripts/download_real_data.py \
+  --year 2024 --months 7 \
+  --datasets citibike yellow green mta weather zones \
+  --execute
+```
+
+Generate mapping files:
+
+```bash
+python nyc_rain_mobility/scripts/generate_zone_maps.py
+```
+
+Then run:
 
 ```bash
 python nyc_rain_mobility/run_pipeline.py --stage all
@@ -47,4 +69,3 @@ uv run python -m agentsociety2.society.cli \
 ```
 
 LLM credentials are required for the AgentSociety2 CLI. The deterministic simulator does not require LLM credentials.
-

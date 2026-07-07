@@ -38,7 +38,29 @@ uv run python ../nyc_rain_mobility/run_pipeline.py --sample --stage all
 
 ## Real Data Run
 
-Put raw files under `nyc_rain_mobility/data/raw/` using the names documented in `data_description.md`, then run:
+First inspect the public download plan:
+
+```bash
+python nyc_rain_mobility/scripts/download_real_data.py \
+  --year 2024 --months 6 7 8 9
+```
+
+Then download selected datasets. Citi Bike files are very large, so start with one month:
+
+```bash
+python nyc_rain_mobility/scripts/download_real_data.py \
+  --year 2024 --months 7 \
+  --datasets citibike yellow green mta weather zones \
+  --execute
+```
+
+Generate station-to-zone maps from station coordinates and NYC taxi zone GeoJSON:
+
+```bash
+python nyc_rain_mobility/scripts/generate_zone_maps.py
+```
+
+Then run the full pipeline:
 
 ```bash
 python nyc_rain_mobility/run_pipeline.py --stage all
@@ -55,6 +77,12 @@ The default output locations are:
 - `hypothesis_1/experiment_*/init/steps.yaml`
 - `hypothesis_1/experiment_*/run/simulated_decisions.csv`
 - `presentation/tables/policy_metrics.csv`
+
+## Real Data Utilities
+
+- `scripts/download_real_data.py`: lists or downloads Citi Bike, TLC taxi, MTA subway, weather, and taxi zone GeoJSON inputs.
+- `scripts/generate_zone_maps.py`: spatially joins Citi Bike and MTA station coordinates to taxi zones using `shapely`.
+- `scripts/build_zone_hour_panel.py`: chunk-reads large Citi Bike CSV/ZIP files to avoid loading full monthly files at once.
 
 ## AgentSociety2 Integration
 
@@ -75,4 +103,3 @@ uv run python -m agentsociety2.society.cli \
   --experiment-id nyc_rain_baseline \
   --log-file ../nyc_rain_mobility/hypothesis_1/experiment_1_baseline/run/output.log
 ```
-

@@ -1,0 +1,29 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"locationid": "101", "zone": "Sample Zone 101", "borough": "Manhattan"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.000, 40.745], [-73.985, 40.745], [-73.985, 40.755], [-74.000, 40.755], [-74.000, 40.745]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"locationid": "102", "zone": "Sample Zone 102", "borough": "Manhattan"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.985, 40.750], [-73.975, 40.750], [-73.975, 40.760], [-73.985, 40.760], [-73.985, 40.750]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"locationid": "103", "zone": "Sample Zone 103", "borough": "Manhattan"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.975, 40.755], [-73.965, 40.755], [-73.965, 40.765], [-73.975, 40.765], [-73.975, 40.755]]]
+      }
+    }
+  ]
+}

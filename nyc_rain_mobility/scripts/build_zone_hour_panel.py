@@ -12,6 +12,7 @@ from common import (
     PROCESSED_DIR,
     ensure_dirs,
     first_existing_column,
+    iter_csv_chunks,
     normalize_zone_id,
     parse_hour,
     read_many,
@@ -21,44 +22,75 @@ from common import (
 
 
 def aggregate_bike(sample: bool) -> pd.DataFrame:
-    bike = read_many(require_paths("citibike", sample=sample))
+    bike_paths = require_paths("citibike", sample=sample)
     station_map = read_table(require_paths("bike_station_zone_map", sample=sample)[0])
     station_map["station_id"] = station_map["station_id"].astype(str)
     station_map["zone_id"] = normalize_zone_id(station_map["zone_id"])
-
-    bike["start_station_id"] = bike["start_station_id"].astype(str)
-    bike["hour"] = parse_hour(bike["started_at"])
-    bike = bike.merge(
-        station_map,
-        left_on="start_station_id",
-        right_on="station_id",
-        how="left",
-    )
-    bike["zone_id"] = bike["zone_id"].fillna("unknown")
-    bike["is_member"] = bike.get("member_casual", "").astype(str).str.lower().eq("member")
-    bike["is_casual"] = bike.get("member_casual", "").astype(str).str.lower().eq("casual")
-    bike["is_peak"] = bike["hour"].dt.hour.isin([7, 8, 9, 16, 17, 18])
-
-    grouped = (
-        bike.dropna(subset=["hour"])
-        .groupby(["zone_id", "hour"], as_index=False)
+    chunk_groups = []
+    usecols = [
+        "ride_id",
+        "started_at",
+        "start_station_id",
+        "member_casual",
+    ]
+    for path in bike_paths:
+        for bike in iter_csv_chunks(path, chunksize=500_000, usecols=lambda c: c in usecols):
+            bike["start_station_id"] = bike["start_station_id"].astype(str)
+            bike["hour"] = parse_hour(bike["started_at"])
+            bike = bike.merge(
+                station_map,
+                left_on="start_station_id",
+                right_on="station_id",
+                how="left",
+            )
+            bike["zone_id"] = bike["zone_id"].fillna("unknown")
+            bike["is_member"] = bike.get("member_casual", "").astype(str).str.lower().eq("member")
+            bike["is_casual"] = bike.get("member_casual", "").astype(str).str.lower().eq("casual")
+            bike["is_peak"] = bike["hour"].dt.hour.isin([7, 8, 9, 16, 17, 18])
+            chunk_groups.append(
+                bike.dropna(subset=["hour"])
+                .groupby(["zone_id", "hour"], as_index=False)
+                .agg(
+                    bike_trip_count=("ride_id", "count"),
+                    bike_member_count=("is_member", "sum"),
+                    bike_casual_count=("is_casual", "sum"),
+                    bike_peak_count=("is_peak", "sum"),
+                )
+            )
+    if not chunk_groups:
+        return pd.DataFrame(
+            columns=[
+                "zone_id",
+                "hour",
+                "bike_trip_count",
+                "bike_member_count",
+                "bike_casual_count",
+                "bike_peak_count",
+            ]
+        )
+    grouped = pd.concat(chunk_groups, ignore_index=True)
+    return (
+        grouped.groupby(["zone_id", "hour"], as_index=False)
         .agg(
-            bike_trip_count=("ride_id", "count"),
-            bike_member_count=("is_member", "sum"),
-            bike_casual_count=("is_casual", "sum"),
-            bike_peak_count=("is_peak", "sum"),
+            bike_trip_count=("bike_trip_count", "sum"),
+            bike_member_count=("bike_member_count", "sum"),
+            bike_casual_count=("bike_casual_count", "sum"),
+            bike_peak_count=("bike_peak_count", "sum"),
         )
     )
-    return grouped
 
 
 def aggregate_taxi(sample: bool) -> pd.DataFrame:
     taxi = read_many(require_paths("taxi", sample=sample))
-    pickup_col = first_existing_column(
-        taxi,
-        ["pickup_datetime", "tpep_pickup_datetime", "lpep_pickup_datetime"],
-    )
-    taxi["hour"] = parse_hour(taxi[pickup_col])
+    pickup_candidates = ["pickup_datetime", "tpep_pickup_datetime", "lpep_pickup_datetime"]
+    present_pickup_cols = [col for col in pickup_candidates if col in taxi.columns]
+    if not present_pickup_cols:
+        raise KeyError(f"None of the pickup datetime columns exist: {pickup_candidates}")
+    pickup = pd.Series(pd.NaT, index=taxi.index, dtype="datetime64[ns]")
+    for col in present_pickup_cols:
+        parsed = pd.to_datetime(taxi[col], errors="coerce")
+        pickup = pickup.fillna(parsed)
+    taxi["hour"] = pickup.dt.floor("h")
     taxi["zone_id"] = normalize_zone_id(taxi["PULocationID"])
     value_cols = {}
     if "trip_distance" in taxi.columns:
@@ -175,4 +207,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

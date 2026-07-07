@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import csv
 import glob
+import gzip
 import json
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +71,16 @@ def read_table(path: Path, **kwargs: Any) -> pd.DataFrame:
         return pd.read_parquet(path, **kwargs)
     if suffixes.endswith(".csv") or suffixes.endswith(".csv.gz"):
         return pd.read_csv(path, **kwargs)
+    if suffixes.endswith(".zip"):
+        with zipfile.ZipFile(path) as zf:
+            names = [name for name in zf.namelist() if name.lower().endswith(".csv")]
+            if not names:
+                raise ValueError(f"No CSV found inside {path}")
+            frames = []
+            for name in names:
+                with zf.open(name) as raw:
+                    frames.append(pd.read_csv(raw, **kwargs))
+            return pd.concat(frames, ignore_index=True)
     raise ValueError(f"Unsupported table format: {path}")
 
 
@@ -101,3 +113,41 @@ def first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str:
             return candidate
     raise KeyError(f"None of the columns exist: {candidates}")
 
+
+def iter_csv_dicts(path: Path):
+    """Yield CSV rows from .csv, .csv.gz, or single/multi-file .zip archives."""
+    suffixes = "".join(path.suffixes).lower()
+    if suffixes.endswith(".zip"):
+        with zipfile.ZipFile(path) as zf:
+            names = [name for name in zf.namelist() if name.lower().endswith(".csv")]
+            if not names:
+                raise ValueError(f"No CSV found inside {path}")
+            for name in names:
+                with zf.open(name) as raw:
+                    text = (line.decode("utf-8", errors="replace") for line in raw)
+                    yield from csv.DictReader(text)
+    elif suffixes.endswith(".csv.gz"):
+        with gzip.open(path, "rt", encoding="utf-8", errors="replace", newline="") as f:
+            yield from csv.DictReader(f)
+    elif suffixes.endswith(".csv"):
+        with path.open("r", encoding="utf-8", errors="replace", newline="") as f:
+            yield from csv.DictReader(f)
+    else:
+        raise ValueError(f"Unsupported CSV stream format: {path}")
+
+
+def iter_csv_chunks(path: Path, *, chunksize: int = 500_000, **kwargs: Any):
+    """Yield pandas CSV chunks from .csv, .csv.gz, or .zip archives."""
+    suffixes = "".join(path.suffixes).lower()
+    if suffixes.endswith(".zip"):
+        with zipfile.ZipFile(path) as zf:
+            names = [name for name in zf.namelist() if name.lower().endswith(".csv")]
+            if not names:
+                raise ValueError(f"No CSV found inside {path}")
+            for name in names:
+                with zf.open(name) as raw:
+                    yield from pd.read_csv(raw, chunksize=chunksize, **kwargs)
+    elif suffixes.endswith(".csv") or suffixes.endswith(".csv.gz"):
+        yield from pd.read_csv(path, chunksize=chunksize, **kwargs)
+    else:
+        raise ValueError(f"Unsupported CSV chunk format: {path}")

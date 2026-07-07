@@ -75,6 +75,40 @@ Required mapping files:
 
 These can be produced by spatially joining station coordinates to the TLC taxi zone shapefile. For the first version, manually verified mapping files are acceptable.
 
+Implemented helper:
+
+```bash
+python nyc_rain_mobility/scripts/download_real_data.py \
+  --datasets zones --execute
+python nyc_rain_mobility/scripts/generate_zone_maps.py
+```
+
+The helper uses the NYC Open Data taxi zone GeoJSON (`8meu-9t5y`) and `shapely` point-in-polygon matching. Citi Bike station coordinates are extracted from trip files; MTA station coordinates are read from the MTA hourly ridership API output.
+
+## Download Helper
+
+The real data downloader is intentionally dry-run by default:
+
+```bash
+python nyc_rain_mobility/scripts/download_real_data.py --year 2024 --months 6 7 8 9
+```
+
+Use `--execute` only after checking file sizes:
+
+```bash
+python nyc_rain_mobility/scripts/download_real_data.py \
+  --year 2024 --months 7 \
+  --datasets citibike yellow green mta weather zones \
+  --execute
+```
+
+Notes:
+
+- Citi Bike monthly NYC files can approach or exceed 1 GiB each.
+- TLC yellow/green monthly parquet files are smaller and are downloaded from the official TLC CloudFront host.
+- MTA data is downloaded with a server-side Socrata aggregation query to reduce duplicate fare-category rows.
+- Weather is downloaded from Open-Meteo Archive API and converted to CSV.
+
 ### Optional Social Context
 
 ACS and LODES data can be used to calibrate socioeconomic and commute constraints.
@@ -95,4 +129,3 @@ Expected fields:
 - `no_vehicle_share`
 - `transit_commute_share`
 - `low_income_share`
-
