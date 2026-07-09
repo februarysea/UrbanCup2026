@@ -24,7 +24,7 @@ How do New York City travelers change mode choices before, during, and after rai
 
 - City: `New York City`.
 - Study months configured: `[6, 7, 8, 9]` in `2024`.
-- Mobility data: Citi Bike trips, NYC TLC taxi/FHV trips, and MTA subway hourly ridership.
+- Mobility data: Citi Bike trips, NYC TLC taxi/FHV trips, MTA subway hourly ridership, and optional MTA bus hourly ridership.
 - Weather data: hourly precipitation from Open-Meteo historical weather.
 - Spatial unit: taxi zone by hour; temporal unit: one hour.
 - Detected rainstorm events in current run: `1`.
@@ -34,15 +34,17 @@ How do New York City travelers change mode choices before, during, and after rai
 | `citibike` | Bike trip response and bike-user archetype calibration | https://citibikenyc.com/system-data |
 | `taxi` | Taxi substitution and zone-level taxi supply proxy | https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page |
 | `mta` | Subway substitution and transit-access proxy | https://data.ny.gov/Transportation/MTA-Subway-Hourly-Ridership-2020-2024/wujg-7c2s |
+| `bus` | Optional bus substitution proxy from route-hour ridership | https://data.ny.gov/Transportation/MTA-Bus-Hourly-Ridership-2020-2024/kv7t-n8in |
 | `weather` | Hourly rainstorm identification and storm phase labels | https://open-meteo.com/en/docs/historical-weather-api |
 | `taxi_zones_geojson` | Common spatial unit for mobility aggregation | https://data.cityofnewyork.us/resource/8meu-9t5y.geojson |
 | `bike_station_zone_map` | Derived station-to-zone crosswalk for Citi Bike | Derived from public spatial joins or optional local features |
 | `mta_station_zone_map` | Derived station-to-zone crosswalk for subway ridership | Derived from public spatial joins or optional local features |
-| `acs_zone_features` | Optional socioeconomic and access context | Derived from public spatial joins or optional local features |
+| `bus_route_zone_map` | Optional route-to-zone allocation crosswalk for bus ridership | Derived from public spatial joins or optional local features |
+| `acs_zone_features` | Optional socioeconomic and access context | https://api.census.gov/data.html |
 
 ## Method
 
-1. Aggregate bike, taxi, subway, and weather data into a `zone_id x hour` panel.
+1. Aggregate bike, taxi, subway, optional bus, and weather data into a `zone_id x hour` panel.
 2. Detect rainstorm hours using hourly precipitation thresholds and label pre-rain, during-rain, post-rain, and control windows.
 3. Estimate observed mode shifts by comparing storm windows with control hours.
 4. Generate traveler archetypes from empirical mode patterns and zone context.
@@ -60,7 +62,7 @@ How do New York City travelers change mode choices before, during, and after rai
 
 ## Reproducibility Status
 
-- Pipeline validation checks: `46/46` passed.
+- Pipeline validation checks: `49/49` passed.
 - Errors: `0`.
 - Warnings: `0`.
 - Validation covers input schemas, generated outputs, AgentSociety2 custom environment metadata, and a runtime environment smoke test.
@@ -72,21 +74,22 @@ How do New York City travelers change mode choices before, during, and after rai
 | bike | 0.167 | 0.111 | -33.3% |
 | taxi | 0.167 | 0.333 | 100.0% |
 | subway | 200.000 | 438.889 | 119.4% |
+| bus | 136.667 | 170.000 | 24.4% |
 
 ![Observed mobility by phase](charts/observed_mobility_by_phase.png)
 
 ## Policy Simulation
 
-| Scenario | Bike | Taxi | Subway | Delay | Cancel | Unmet demand | Rain exposure |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| experiment_1_baseline | 21.5% | 22.2% | 48.6% | 5.6% | 2.1% | 7.6% | 2.8% |
-| experiment_2_early_warning | 23.6% | 25.7% | 40.3% | 6.9% | 3.5% | 10.4% | 2.8% |
-| experiment_3_transit_guidance | 19.4% | 27.8% | 47.2% | 4.9% | 0.7% | 5.6% | 0.7% |
-| experiment_4_taxi_support | 18.8% | 27.8% | 46.5% | 6.2% | 0.7% | 6.9% | 0.0% |
+| Scenario | Bike | Taxi | Subway | Bus | Walk | Delay | Cancel | Unmet demand | Rain exposure |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| experiment_1_baseline | 11.8% | 18.8% | 32.6% | 23.6% | 7.6% | 2.8% | 2.8% | 5.6% | 2.1% |
+| experiment_2_early_warning | 13.2% | 23.6% | 24.3% | 20.8% | 13.2% | 2.1% | 2.8% | 4.9% | 1.4% |
+| experiment_3_transit_guidance | 9.7% | 24.3% | 29.9% | 22.9% | 11.1% | 1.4% | 0.7% | 2.1% | 1.4% |
+| experiment_4_taxi_support | 10.4% | 22.2% | 28.5% | 24.3% | 12.5% | 0.7% | 1.4% | 2.1% | 2.1% |
 
-- Baseline unmet demand is `7.6%` and direct rain exposure is `2.8%` in the current run.
-- Lowest unmet demand scenario: `experiment_3_transit_guidance` with `5.6%` unmet demand.
-- Lowest rain exposure scenario: `experiment_4_taxi_support` with `0.0%` rain exposure.
+- Baseline unmet demand is `5.6%` and direct rain exposure is `2.1%` in the current run.
+- Lowest unmet demand scenario: `experiment_4_taxi_support` with `2.1%` unmet demand.
+- Lowest rain exposure scenario: `experiment_2_early_warning` with `1.4%` rain exposure.
 - These sample-run numbers are evidence that the pipeline computes tradeoffs; final policy claims require the full-data run.
 
 ![Policy mode shares](charts/policy_mode_shares.png)

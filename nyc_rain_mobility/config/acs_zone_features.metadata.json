@@ -1,0 +1,8 @@
+{
+  "sample": true,
+  "taxi_zones_path": "/nvme01/home/jichunhou/UrbanCup2026/nyc_rain_mobility/data/sample/taxi_zones.geojson",
+  "sample_acs_path": "/nvme01/home/jichunhou/UrbanCup2026/nyc_rain_mobility/data/sample/acs_zone_features.csv",
+  "output": "/nvme01/home/jichunhou/UrbanCup2026/nyc_rain_mobility/config/acs_zone_features.csv",
+  "output_rows": 3,
+  "method": "Offline sample fixture using taxi-zone-shaped synthetic tracts; validates the interpolation and output schema without Census network access."
+}

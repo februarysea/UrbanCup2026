@@ -36,13 +36,18 @@ def _save_phase_chart(phase_summary: pd.DataFrame, output: Path) -> None:
     order = ["control", "pre_rain", "during_rain", "post_rain", "other_rain"]
     plot["rain_phase"] = pd.Categorical(plot["rain_phase"], categories=order, ordered=True)
     plot = plot.sort_values("rain_phase")
-    modes = ["bike_trip_count", "taxi_pickup_count", "subway_ridership"]
-    fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), constrained_layout=True)
     labels = {
         "bike_trip_count": "Citi Bike trips",
         "taxi_pickup_count": "Taxi pickups",
         "subway_ridership": "Subway ridership",
+        "bus_ridership": "Bus ridership",
     }
+    modes = [col for col in labels if col in plot.columns]
+    if not modes:
+        return
+    fig, axes = plt.subplots(1, len(modes), figsize=(max(12, 4 * len(modes)), 3.8), constrained_layout=True)
+    if len(modes) == 1:
+        axes = [axes]
     for ax, mode in zip(axes, modes):
         ax.bar(plot["rain_phase"].astype(str), plot[mode], color="#4c78a8")
         ax.set_title(labels[mode])
@@ -68,13 +73,17 @@ def _save_policy_chart(policy_metrics: pd.DataFrame, output: Path) -> None:
         .str.replace("experiment_4_", "", regex=False)
         .str.replace("_", " ", regex=False)
     )
-    metrics = ["bike_share", "taxi_share", "subway_share", "unmet_demand_share"]
+    metrics = [
+        metric
+        for metric in ["bike_share", "taxi_share", "subway_share", "bus_share", "walk_share", "unmet_demand_share"]
+        if metric in plot.columns
+    ]
     fig, ax = plt.subplots(figsize=(10, 4.5), constrained_layout=True)
-    width = 0.18
+    width = min(0.16, 0.8 / max(len(metrics), 1))
     x = range(len(plot))
-    colors = ["#4c78a8", "#f58518", "#54a24b", "#e45756"]
+    colors = ["#4c78a8", "#f58518", "#54a24b", "#72b7b2", "#b279a2", "#e45756"]
     for idx, metric in enumerate(metrics):
-        offsets = [v + (idx - 1.5) * width for v in x]
+        offsets = [v + (idx - (len(metrics) - 1) / 2) * width for v in x]
         ax.bar(offsets, plot[metric], width=width, label=metric.replace("_", " "), color=colors[idx])
     ax.set_xticks(list(x))
     ax.set_xticklabels(plot["scenario_label"], rotation=20, ha="right")
@@ -117,7 +126,7 @@ def _fmt_pct(value: float) -> str:
 def _mode_comparison_lines(summary: dict) -> list[str]:
     comparisons = summary.get("mode_comparisons", {})
     rows = []
-    for mode in ["bike", "taxi", "subway"]:
+    for mode in ["bike", "taxi", "subway", "bus"]:
         item = comparisons.get(mode, {})
         if not item:
             continue
@@ -136,16 +145,18 @@ def _policy_table(policy_metrics: pd.DataFrame) -> list[str]:
     if policy_metrics.empty:
         return ["No policy metrics were generated."]
     rows = [
-        "| Scenario | Bike | Taxi | Subway | Delay | Cancel | Unmet demand | Rain exposure |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| Scenario | Bike | Taxi | Subway | Bus | Walk | Delay | Cancel | Unmet demand | Rain exposure |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in policy_metrics.sort_values("scenario").itertuples(index=False):
         rows.append(
-            "| {scenario} | {bike} | {taxi} | {subway} | {delay} | {cancel} | {unmet} | {exposure} |".format(
+            "| {scenario} | {bike} | {taxi} | {subway} | {bus} | {walk} | {delay} | {cancel} | {unmet} | {exposure} |".format(
                 scenario=row.scenario,
                 bike=_fmt_pct(float(row.bike_share)),
                 taxi=_fmt_pct(float(row.taxi_share)),
                 subway=_fmt_pct(float(row.subway_share)),
+                bus=_fmt_pct(float(getattr(row, "bus_share", 0.0))),
+                walk=_fmt_pct(float(getattr(row, "walk_share", 0.0))),
                 delay=_fmt_pct(float(row.delay_share)),
                 cancel=_fmt_pct(float(row.cancel_share)),
                 unmet=_fmt_pct(float(row.unmet_demand_share)),
@@ -164,20 +175,24 @@ def _data_source_table(manifest: dict) -> list[str]:
         "citibike": "Bike trip response and bike-user archetype calibration",
         "taxi": "Taxi substitution and zone-level taxi supply proxy",
         "mta": "Subway substitution and transit-access proxy",
+        "bus": "Optional bus substitution proxy from route-hour ridership",
         "weather": "Hourly rainstorm identification and storm phase labels",
         "taxi_zones_geojson": "Common spatial unit for mobility aggregation",
         "bike_station_zone_map": "Derived station-to-zone crosswalk for Citi Bike",
         "mta_station_zone_map": "Derived station-to-zone crosswalk for subway ridership",
+        "bus_route_zone_map": "Optional route-to-zone allocation crosswalk for bus ridership",
         "acs_zone_features": "Optional socioeconomic and access context",
     }
     for key in [
         "citibike",
         "taxi",
         "mta",
+        "bus",
         "weather",
         "taxi_zones_geojson",
         "bike_station_zone_map",
         "mta_station_zone_map",
+        "bus_route_zone_map",
         "acs_zone_features",
     ]:
         item = manifest.get(key, {})
@@ -282,7 +297,7 @@ def generate_report(output: Path) -> Path:
     markdown.append("")
     markdown.append(f"- City: `{config.get('study', {}).get('city', 'New York City')}`.")
     markdown.append(f"- Study months configured: `{config.get('study', {}).get('months', [])}` in `{config.get('study', {}).get('year', '')}`.")
-    markdown.append("- Mobility data: Citi Bike trips, NYC TLC taxi/FHV trips, and MTA subway hourly ridership.")
+    markdown.append("- Mobility data: Citi Bike trips, NYC TLC taxi/FHV trips, MTA subway hourly ridership, and optional MTA bus hourly ridership.")
     markdown.append("- Weather data: hourly precipitation from Open-Meteo historical weather.")
     markdown.append("- Spatial unit: taxi zone by hour; temporal unit: one hour.")
     markdown.append(f"- Detected rainstorm events in current run: `{event_count}`.")
@@ -291,7 +306,7 @@ def generate_report(output: Path) -> Path:
     markdown.append("")
     markdown.append("## Method")
     markdown.append("")
-    markdown.append("1. Aggregate bike, taxi, subway, and weather data into a `zone_id x hour` panel.")
+    markdown.append("1. Aggregate bike, taxi, subway, optional bus, and weather data into a `zone_id x hour` panel.")
     markdown.append("2. Detect rainstorm hours using hourly precipitation thresholds and label pre-rain, during-rain, post-rain, and control windows.")
     markdown.append("3. Estimate observed mode shifts by comparing storm windows with control hours.")
     markdown.append("4. Generate traveler archetypes from empirical mode patterns and zone context.")

@@ -24,6 +24,7 @@ STAGES = [
     "report",
     "validate",
 ]
+OPTIONAL_STAGES = ["census"]
 
 
 def run_script(script_name: str, args: list[str]) -> None:
@@ -36,13 +37,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--stage",
-        choices=["all", *STAGES],
+        choices=["all", *STAGES, *OPTIONAL_STAGES],
         default="all",
         help="Pipeline stage to run.",
     )
     parser.add_argument("--sample", action="store_true", help="Use bundled sample data.")
     parser.add_argument("--num-agents", type=int, default=None)
     parser.add_argument("--max-hours", type=int, default=None)
+    parser.add_argument("--acs-year", type=int, default=2024)
     return parser.parse_args()
 
 
@@ -53,6 +55,11 @@ def main() -> None:
     for stage in selected:
         if stage == "build-panel":
             run_script("build_zone_hour_panel.py", sample_flag)
+        elif stage == "census":
+            extra = sample_flag[:]
+            if not args.sample:
+                extra.extend(["--year", str(args.acs_year)])
+            run_script("build_acs_zone_features.py", extra)
         elif stage == "identify-events":
             run_script("identify_rain_events.py", [])
         elif stage == "empirical":

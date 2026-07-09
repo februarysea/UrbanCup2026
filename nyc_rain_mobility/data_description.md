@@ -109,23 +109,60 @@ Notes:
 - MTA data is downloaded with a server-side Socrata aggregation query to reduce duplicate fare-category rows.
 - Weather is downloaded from Open-Meteo Archive API and converted to CSV.
 
-### Optional Social Context
+### Census / ACS Social Context
 
-ACS and LODES data can be used to calibrate socioeconomic and commute constraints.
+ACS data is used to calibrate socioeconomic and commute constraints for the
+synthetic agent population. LODES can later improve home-work OD assignment.
 
 Sources:
 
-- ACS: https://www.census.gov/programs-surveys/acs/data.html
+- ACS API: https://api.census.gov/data.html
+- ACS 5-year data: https://www.census.gov/data/developers/data-sets/acs-5year.html
+- Census TIGERweb tract geometry: https://tigerweb.geo.census.gov/
 - LODES: https://lehd.ces.census.gov/data/
 
-Expected optional file:
+Expected generated file:
 
 - `acs_zone_features.csv`
 
 Expected fields:
 
 - `zone_id`
+- `borough`
+- `zone_name`
+- `total_population`
+- `worker_population`
+- `household_count`
 - `median_household_income`
 - `no_vehicle_share`
 - `transit_commute_share`
+- `bike_commute_share`
+- `walk_commute_share`
+- `taxi_commute_share`
+- `work_from_home_share`
+- `poverty_share`
 - `low_income_share`
+- `avg_commute_time`
+
+Implemented helper:
+
+```bash
+cd agentsociety
+uv run python ../nyc_rain_mobility/scripts/download_real_data.py --datasets zones --execute
+uv run python ../nyc_rain_mobility/scripts/build_acs_zone_features.py --year 2024
+```
+
+Offline schema check:
+
+```bash
+cd agentsociety
+uv run python ../nyc_rain_mobility/scripts/build_acs_zone_features.py \
+  --sample \
+  --output ../nyc_rain_mobility/data/interim/acs_zone_features_sample_generated.csv
+```
+
+The helper downloads tract-level ACS counts for the five NYC counties, downloads
+Census tract geometries, reprojects tracts and taxi zones to EPSG:2263, allocates
+tract count variables to taxi zones by overlap area, and computes final shares
+after allocation. Median household income is approximated by household-weighted
+tract medians.

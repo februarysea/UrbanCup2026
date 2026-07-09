@@ -22,6 +22,10 @@ This project studies how rainstorms change travel decisions in New York City bef
 8. `report`: generate charts and a Markdown report draft.
 9. `validate`: check required inputs, generated outputs, and AgentSociety2 custom-module wiring.
 
+Optional stage: `census` builds `config/acs_zone_features.csv` from ACS/Census
+tract data and TLC taxi zones. It is not included in `--stage all` because it
+downloads external Census data.
+
 ## Quick Dry Run
 
 The sample data is tiny and only proves the pipeline works end to end.
@@ -66,6 +70,24 @@ Generate station-to-zone maps from station coordinates and NYC taxi zone GeoJSON
 python nyc_rain_mobility/scripts/generate_zone_maps.py
 ```
 
+Build ACS/Census socioeconomic features on TLC taxi zones:
+
+```bash
+cd agentsociety
+uv run python ../nyc_rain_mobility/scripts/download_real_data.py --datasets zones --execute
+uv run python ../nyc_rain_mobility/scripts/build_acs_zone_features.py --year 2024
+```
+
+If the Census API is temporarily unavailable, the Census processing schema can
+still be checked offline:
+
+```bash
+cd agentsociety
+uv run python ../nyc_rain_mobility/scripts/build_acs_zone_features.py \
+  --sample \
+  --output ../nyc_rain_mobility/data/interim/acs_zone_features_sample_generated.csv
+```
+
 Then run the full pipeline:
 
 ```bash
@@ -91,11 +113,13 @@ The default output locations are:
 ## Real Data Utilities
 
 - `scripts/download_real_data.py`: lists or downloads Citi Bike, TLC taxi, MTA subway, weather, and taxi zone GeoJSON inputs.
+- `scripts/build_acs_zone_features.py`: downloads ACS 5-year tract data, overlays it with TLC taxi zones, and writes `config/acs_zone_features.csv` for agent generation.
 - `scripts/generate_zone_maps.py`: spatially joins Citi Bike and MTA station coordinates to taxi zones using `shapely`.
 - `scripts/build_zone_hour_panel.py`: chunk-reads large Citi Bike CSV/ZIP files to avoid loading full monthly files at once.
 - `scripts/generate_report.py`: creates report charts and `presentation/report.md` from current pipeline outputs.
 - `scripts/validate_pipeline.py`: checks data schemas, required outputs, generated configs, charts, report files, and AgentSociety2 custom-module wiring.
 - `scripts/package_submission.py`: creates a lightweight Urban Cup bundle with report, workspace code, sample data, init configs, charts, tables, and manifest.
+- `INTERFACES.md`: fixed table schemas for team handoff and integration.
 
 ## Submission Bundle
 

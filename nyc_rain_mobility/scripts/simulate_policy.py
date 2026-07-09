@@ -17,7 +17,9 @@ def _scenario_adjustments(scenario: str, agent: dict) -> dict[str, float]:
     adjustment = {
         "bike_penalty": 0.0,
         "subway_bonus": 0.0,
+        "bus_bonus": 0.0,
         "taxi_bonus": 0.0,
+        "walk_penalty": 0.0,
         "delay_bonus": 0.0,
         "cancel_bonus": 0.0,
     }
@@ -28,6 +30,7 @@ def _scenario_adjustments(scenario: str, agent: dict) -> dict[str, float]:
     elif scenario == "transit_guidance":
         adjustment["bike_penalty"] += 0.12 * receptiveness
         adjustment["subway_bonus"] += 0.25 * receptiveness
+        adjustment["bus_bonus"] += 0.18 * receptiveness
     elif scenario == "taxi_support":
         adjustment["taxi_bonus"] += 0.28 * receptiveness
         if agent["archetype"] == "low_alternative_access_user":
@@ -96,9 +99,11 @@ def simulate_scenario(
             rain_intensity = min(1.0, precipitation / 10.0)
             rain_sensitivity = float(agent["rain_sensitivity"])
             subway_access = float(agent["subway_accessibility"])
+            bus_access = float(agent.get("bus_accessibility", 0.0))
             taxi_avail = float(agent["taxi_availability"])
             cost_sensitivity = float(agent["cost_sensitivity"])
             flexibility = float(agent["schedule_flexibility"])
+            walk_tolerance = float(agent.get("walk_tolerance", 0.2))
             adj = _scenario_adjustments(scenario_policy, agent)
 
             bike_score = 0.55 if agent["preferred_mode"] == "bike" else 0.20
@@ -110,12 +115,24 @@ def simulate_scenario(
             if agent["preferred_mode"] == "subway":
                 subway_score += 0.20
 
+            bus_score = 0.12 + bus_access * 0.38
+            bus_score += adj["bus_bonus"] * rain_intensity
+            bus_score -= rain_intensity * 0.04
+            if agent["preferred_mode"] == "bus":
+                bus_score += 0.22
+
             taxi_score = 0.15 + taxi_avail * 0.35
             taxi_score -= cost_sensitivity * 0.12
             taxi_score += rain_intensity * 0.12
             taxi_score += adj["taxi_bonus"] * rain_intensity
             if agent["preferred_mode"] == "taxi":
                 taxi_score += 0.18
+
+            walk_score = 0.08 + walk_tolerance * 0.25
+            walk_score -= rain_intensity * (0.10 + rain_sensitivity * 0.35)
+            walk_score -= adj["walk_penalty"] * rain_intensity
+            if agent["preferred_mode"] == "walk":
+                walk_score += 0.25
 
             delay_score = flexibility * (0.15 + rain_intensity * 0.45)
             delay_score += adj["delay_bonus"] * rain_intensity
@@ -130,12 +147,14 @@ def simulate_scenario(
                 {
                     "bike": bike_score,
                     "subway": subway_score,
+                    "bus": bus_score,
                     "taxi": taxi_score,
+                    "walk": walk_score,
                     "delay": delay_score,
                     "cancel": cancel_score,
                 },
             )
-            heat_or_rain_exposure = 1.0 if decision == "bike" and precipitation > 0 else 0.0
+            heat_or_rain_exposure = 1.0 if decision in {"bike", "walk"} and precipitation > 0 else 0.0
             unmet = 1 if decision in {"delay", "cancel"} else 0
             rows.append(
                 {
@@ -144,11 +163,14 @@ def simulate_scenario(
                     "agent_id": agent["id"],
                     "archetype": agent["archetype"],
                     "home_zone": zone_id,
+                    "origin_zone": str(agent.get("origin_zone", agent.get("home_zone", zone_id))),
+                    "destination_zone": str(agent.get("destination_zone", agent.get("work_zone", ""))),
                     "hour": pd.Timestamp(hour).isoformat(),
                     "rain_phase": rain_phase,
                     "event_id": str(getattr(ctx, "event_id", "")),
                     "precipitation": precipitation,
                     "decision": decision,
+                    "chosen_mode": decision if decision not in {"delay", "cancel"} else "none",
                     "rain_exposure": heat_or_rain_exposure,
                     "unmet_demand": unmet,
                 }

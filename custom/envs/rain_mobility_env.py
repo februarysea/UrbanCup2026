@@ -30,6 +30,7 @@ class MobilityContext(BaseModel):
     bike_trip_count: int
     taxi_pickup_count: int
     subway_ridership: int
+    bus_ridership: float = 0.0
     scenario: str
 
 
@@ -37,7 +38,7 @@ class DecisionRecord(BaseModel):
     agent_id: int
     hour: str
     decision: str = Field(..., description="travel_now, delay, or cancel")
-    mode: str = Field(..., description="bike, taxi, subway, none")
+    mode: str = Field(..., description="bike, taxi, subway, bus, walk, none")
     reason: str
 
 
@@ -66,7 +67,7 @@ class RainMobilityEnv(EnvBase):
 
     @classmethod
     def description(cls) -> str:
-        return "NYC rainstorm mobility environment for bike, taxi, and subway mode-choice decisions."
+        return "NYC rainstorm mobility environment for bike, taxi, subway, bus, and walking mode-choice decisions."
 
     @classmethod
     def init_description(cls) -> str:
@@ -120,6 +121,7 @@ Agents should call observe_mobility_context(agent_id) and then record_travel_dec
                 "bike_trip_count": 0,
                 "taxi_pickup_count": 0,
                 "subway_ridership": 0,
+                "bus_ridership": 0.0,
                 "scenario": self.scenario,
             }
         subset = self._panel[(self._panel["hour"] == hour) & (self._panel["zone_id"] == zone_id)]
@@ -135,12 +137,13 @@ Agents should call observe_mobility_context(agent_id) and then record_travel_dec
             "bike_trip_count": int(row.get("bike_trip_count", 0)),
             "taxi_pickup_count": int(row.get("taxi_pickup_count", 0)),
             "subway_ridership": int(row.get("subway_ridership", 0)),
+            "bus_ridership": float(row.get("bus_ridership", 0.0)),
             "scenario": self.scenario,
         }
 
     @tool(readonly=True, kind="observe")
     async def observe_mobility_context(self, agent_id: int) -> dict[str, Any]:
-        """Observe current rain, bike, taxi, and subway context for this traveler's home zone."""
+        """Observe current rain and multimodal mobility context for this traveler's home zone."""
         return MobilityContext(**self._context_for_agent(agent_id)).model_dump()
 
     @tool(readonly=True)

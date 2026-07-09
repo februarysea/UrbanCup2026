@@ -14,6 +14,11 @@
     "raw_glob": "data/raw/mta_hourly*.csv",
     "sample_glob": "data/sample/mta_hourly.csv"
   },
+  "bus": {
+    "source": "https://data.ny.gov/Transportation/MTA-Bus-Hourly-Ridership-2020-2024/kv7t-n8in",
+    "raw_glob": "data/raw/mta_bus_hourly*.csv",
+    "sample_glob": "data/sample/bus_hourly.csv"
+  },
   "weather": {
     "source": "https://open-meteo.com/en/docs/historical-weather-api",
     "raw_glob": "data/raw/weather_hourly*.csv",
@@ -27,7 +32,12 @@
     "raw_glob": "config/station_zone_map_mta.csv",
     "sample_glob": "data/sample/station_zone_map_mta.csv"
   },
+  "bus_route_zone_map": {
+    "raw_glob": "config/bus_route_zone_map.csv",
+    "sample_glob": "data/sample/bus_route_zone_map.csv"
+  },
   "acs_zone_features": {
+    "source": "https://api.census.gov/data.html",
     "raw_glob": "config/acs_zone_features.csv",
     "sample_glob": "data/sample/acs_zone_features.csv"
   },

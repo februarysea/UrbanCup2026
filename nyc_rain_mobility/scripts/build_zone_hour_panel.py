@@ -18,6 +18,7 @@ from common import (
     read_many,
     read_table,
     require_paths,
+    resolve_manifest_paths,
 )
 
 
@@ -136,6 +137,56 @@ def aggregate_mta(sample: bool) -> pd.DataFrame:
     return grouped
 
 
+def aggregate_bus(sample: bool) -> pd.DataFrame:
+    bus_paths = resolve_manifest_paths("bus", sample=sample)
+    if not bus_paths:
+        return pd.DataFrame(columns=["zone_id", "hour", "bus_ridership", "bus_transfer_count"])
+
+    map_paths = resolve_manifest_paths("bus_route_zone_map", sample=sample)
+    if not map_paths:
+        raise FileNotFoundError(
+            "Bus ridership files were found, but no bus_route_zone_map file is available. "
+            "Expected columns: bus_route, zone_id, allocation_weight."
+        )
+
+    bus = read_many(bus_paths)
+    route_map = read_table(map_paths[0])
+    timestamp_col = first_existing_column(bus, ["transit_timestamp", "timestamp", "hour"])
+    route_col = first_existing_column(bus, ["bus_route", "route_id", "route"])
+    ridership_col = first_existing_column(bus, ["ridership", "riders"])
+
+    bus["hour"] = parse_hour(bus[timestamp_col])
+    bus["bus_route"] = bus[route_col].astype(str).str.upper().str.strip()
+    bus["ridership"] = pd.to_numeric(bus[ridership_col], errors="coerce").fillna(0.0)
+    if "transfers" in bus.columns:
+        bus["transfers"] = pd.to_numeric(bus["transfers"], errors="coerce").fillna(0.0)
+    else:
+        bus["transfers"] = 0.0
+
+    route_map["bus_route"] = route_map["bus_route"].astype(str).str.upper().str.strip()
+    route_map["zone_id"] = normalize_zone_id(route_map["zone_id"])
+    if "allocation_weight" not in route_map.columns:
+        route_map["allocation_weight"] = 1.0
+    route_map["allocation_weight"] = pd.to_numeric(route_map["allocation_weight"], errors="coerce").fillna(0.0)
+    route_totals = route_map.groupby("bus_route")["allocation_weight"].transform("sum")
+    route_map["allocation_weight"] = route_map["allocation_weight"] / route_totals.replace(0, 1)
+
+    route_hour = (
+        bus.dropna(subset=["hour"])
+        .groupby(["bus_route", "hour"], as_index=False)
+        .agg(ridership=("ridership", "sum"), transfers=("transfers", "sum"))
+    )
+    allocated = route_hour.merge(route_map, on="bus_route", how="left")
+    allocated["zone_id"] = allocated["zone_id"].fillna("unknown")
+    allocated["allocation_weight"] = allocated["allocation_weight"].fillna(0.0)
+    allocated["bus_ridership"] = allocated["ridership"] * allocated["allocation_weight"]
+    allocated["bus_transfer_count"] = allocated["transfers"] * allocated["allocation_weight"]
+    return (
+        allocated.groupby(["zone_id", "hour"], as_index=False)
+        .agg(bus_ridership=("bus_ridership", "sum"), bus_transfer_count=("bus_transfer_count", "sum"))
+    )
+
+
 def aggregate_weather(sample: bool) -> pd.DataFrame:
     weather = read_many(require_paths("weather", sample=sample))
     time_col = first_existing_column(weather, ["time", "timestamp", "hour"])
@@ -160,10 +211,12 @@ def build_panel(sample: bool, output: Path) -> pd.DataFrame:
     bike = aggregate_bike(sample)
     taxi = aggregate_taxi(sample)
     mta = aggregate_mta(sample)
+    bus = aggregate_bus(sample)
     weather = aggregate_weather(sample)
 
     panel = bike.merge(taxi, on=["zone_id", "hour"], how="outer")
     panel = panel.merge(mta, on=["zone_id", "hour"], how="outer")
+    panel = panel.merge(bus, on=["zone_id", "hour"], how="outer")
     zones = sorted(z for z in panel["zone_id"].dropna().unique() if z != "unknown")
     hours = sorted(weather["hour"].dropna().unique())
     base = pd.MultiIndex.from_product([zones, hours], names=["zone_id", "hour"]).to_frame(index=False)
@@ -179,7 +232,16 @@ def build_panel(sample: bool, output: Path) -> pd.DataFrame:
     ]
     for col in count_cols:
         panel[col] = panel[col].fillna(0).astype(int)
-    for col in ["taxi_mean_distance", "taxi_mean_total_amount", "precipitation", "rain", "temperature_2m", "wind_speed_10m"]:
+    for col in [
+        "bus_ridership",
+        "bus_transfer_count",
+        "taxi_mean_distance",
+        "taxi_mean_total_amount",
+        "precipitation",
+        "rain",
+        "temperature_2m",
+        "wind_speed_10m",
+    ]:
         if col in panel.columns:
             panel[col] = panel[col].fillna(0.0)
     panel = panel.sort_values(["hour", "zone_id"])

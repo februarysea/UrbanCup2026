@@ -37,6 +37,8 @@ def evaluate(decision_paths: list[Path], output_dir: Path) -> pd.DataFrame:
             "bike_share": float((group["decision"] == "bike").mean()),
             "taxi_share": float((group["decision"] == "taxi").mean()),
             "subway_share": float((group["decision"] == "subway").mean()),
+            "bus_share": float((group["decision"] == "bus").mean()),
+            "walk_share": float((group["decision"] == "walk").mean()),
             "delay_share": float((group["decision"] == "delay").mean()),
             "cancel_share": float((group["decision"] == "cancel").mean()),
             "unmet_demand_share": float(group["unmet_demand"].mean()),
@@ -90,4 +92,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

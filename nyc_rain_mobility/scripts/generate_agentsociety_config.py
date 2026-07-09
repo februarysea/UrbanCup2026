@@ -26,12 +26,14 @@ def _profile_text(agent: dict, scenario: str) -> str:
         f"You are {agent['name']}, a New York City traveler. "
         f"Archetype: {agent['archetype']}. Home taxi zone: {agent['home_zone']}. "
         f"Destination taxi zone: {agent['destination_zone']}. Trip purpose: {agent['trip_purpose']}. "
+        f"Income group: {agent.get('income_group', 'unknown')}. "
         f"Preferred mode: {agent['preferred_mode']}. "
         f"Rain sensitivity: {agent['rain_sensitivity']}. Subway accessibility: {agent['subway_accessibility']}. "
-        f"Taxi availability: {agent['taxi_availability']}. Cost sensitivity: {agent['cost_sensitivity']}. "
-        f"Schedule flexibility: {agent['schedule_flexibility']}. "
+        f"Bus accessibility: {agent.get('bus_accessibility', 0.0)}. Taxi availability: {agent['taxi_availability']}. "
+        f"Cost sensitivity: {agent['cost_sensitivity']}. Schedule flexibility: {agent['schedule_flexibility']}. "
+        f"Alternative access: {agent.get('alternative_access', 0.0)}. "
         f"Policy scenario: {scenario}. At each step, observe the rain mobility context and choose "
-        "travel_now, delay, or cancel; if traveling, choose bike, taxi, or subway."
+        "travel_now, delay, or cancel; if traveling, choose bike, subway, bus, taxi, or walk."
     )
 
 
@@ -78,6 +80,8 @@ def generate_configs(
                 "profile": _profile_text(agent, policy),
                 "archetype": agent["archetype"],
                 "home_zone": agent["home_zone"],
+                "origin_zone": agent.get("origin_zone", agent["home_zone"]),
+                "work_zone": agent.get("work_zone", agent["destination_zone"]),
                 "destination_zone": agent["destination_zone"],
                 "trip_purpose": agent["trip_purpose"],
                 "preferred_mode": agent["preferred_mode"],

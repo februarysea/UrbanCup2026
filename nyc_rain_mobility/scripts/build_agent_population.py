@@ -13,11 +13,12 @@ from common import CONFIG_DIR, PROCESSED_DIR, normalize_zone_id, read_pipeline_c
 
 
 ARCHETYPE_WEIGHTS = {
-    "bike_commuter": 0.30,
-    "bike_leisure_user": 0.20,
-    "taxi_substituter": 0.18,
-    "subway_substituter": 0.22,
-    "low_alternative_access_user": 0.10,
+    "bike_commuter": 0.24,
+    "bike_leisure_user": 0.14,
+    "taxi_substituter": 0.16,
+    "subway_commuter": 0.20,
+    "bus_dependent_user": 0.14,
+    "low_alternative_access_user": 0.12,
 }
 
 
@@ -58,6 +59,7 @@ def build_agents(panel_path: Path, output: Path, sample: bool, num_agents: int |
             bike_total=("bike_trip_count", "sum"),
             taxi_total=("taxi_pickup_count", "sum"),
             subway_total=("subway_ridership", "sum"),
+            bus_total=("bus_ridership", "sum") if "bus_ridership" in panel.columns else ("subway_ridership", "sum"),
             rain_hours=("precipitation", lambda s: int((s > 0).sum())),
         )
     )
@@ -68,6 +70,8 @@ def build_agents(panel_path: Path, output: Path, sample: bool, num_agents: int |
         "median_household_income",
         "no_vehicle_share",
         "transit_commute_share",
+        "bike_commute_share",
+        "walk_commute_share",
         "low_income_share",
     ]:
         if col not in zone_stats.columns:
@@ -78,6 +82,7 @@ def build_agents(panel_path: Path, output: Path, sample: bool, num_agents: int |
         zone_stats["bike_total"]
         + zone_stats["taxi_total"]
         + zone_stats["subway_total"].clip(lower=1) / 100.0
+        + zone_stats["bus_total"].clip(lower=1) / 100.0
     ).clip(lower=1.0)
     zones = zone_stats["zone_id"].astype(str).tolist()
     weights = zone_stats["mobility_weight"].astype(float).tolist()
@@ -92,9 +97,13 @@ def build_agents(panel_path: Path, output: Path, sample: bool, num_agents: int |
         destination_zone = _weighted_choice(rng, zones, weights)
         z = zone_lookup[home_zone]
         subway_access = min(1.0, float(z["subway_total"]) / max(float(zone_stats["subway_total"].max()), 1.0))
+        bus_access = min(1.0, float(z["bus_total"]) / max(float(zone_stats["bus_total"].max()), 1.0))
         taxi_availability = min(1.0, float(z["taxi_total"]) / max(float(zone_stats["taxi_total"].max()), 1.0))
         low_income_share = float(z.get("low_income_share", 0.0) or 0.0)
         no_vehicle_share = float(z.get("no_vehicle_share", 0.0) or 0.0)
+        transit_share = float(z.get("transit_commute_share", 0.0) or 0.0)
+        bike_share = float(z.get("bike_commute_share", 0.0) or 0.0)
+        walk_share = float(z.get("walk_commute_share", 0.0) or 0.0)
 
         if archetype == "bike_commuter":
             preferred_mode = "bike"
@@ -114,20 +123,40 @@ def build_agents(panel_path: Path, output: Path, sample: bool, num_agents: int |
             rain_sensitivity = rng.uniform(0.40, 0.70)
             schedule_flexibility = rng.uniform(0.15, 0.45)
             cost_sensitivity = rng.uniform(0.15, 0.45)
-        elif archetype == "subway_substituter":
+        elif archetype == "subway_commuter":
             preferred_mode = "subway"
             trip_purpose = "commute"
             rain_sensitivity = rng.uniform(0.35, 0.65)
             schedule_flexibility = rng.uniform(0.15, 0.40)
             cost_sensitivity = rng.uniform(0.45, 0.75)
+        elif archetype == "bus_dependent_user":
+            preferred_mode = "bus"
+            trip_purpose = "commute"
+            rain_sensitivity = rng.uniform(0.40, 0.70)
+            schedule_flexibility = rng.uniform(0.10, 0.35)
+            cost_sensitivity = min(1.0, rng.uniform(0.50, 0.80) + low_income_share * 0.15)
+            bus_access = max(bus_access, rng.uniform(0.35, 0.75))
         else:
-            preferred_mode = "bike"
+            preferred_mode = "bus" if bus_access >= subway_access else "subway"
             trip_purpose = "necessary_trip"
             rain_sensitivity = rng.uniform(0.55, 0.85)
             schedule_flexibility = rng.uniform(0.05, 0.25)
             cost_sensitivity = min(1.0, rng.uniform(0.55, 0.85) + low_income_share * 0.2)
             subway_access = min(subway_access, rng.uniform(0.05, 0.35))
+            bus_access = min(bus_access, rng.uniform(0.05, 0.40))
             taxi_availability = min(taxi_availability, rng.uniform(0.05, 0.35))
+        transit_dependency = min(1.0, no_vehicle_share * 0.55 + transit_share * 0.45)
+        vehicle_access = max(0.0, 1.0 - no_vehicle_share)
+        alternative_access = min(1.0, subway_access * 0.45 + bus_access * 0.35 + taxi_availability * 0.20)
+        walk_tolerance = min(1.0, rng.uniform(0.15, 0.55) + walk_share * 0.45)
+        commute_rigidity = min(
+            1.0,
+            1.0 - schedule_flexibility + (0.15 if trip_purpose in {"commute", "necessary_trip"} else 0.0),
+        )
+        income_group = "low" if low_income_share >= 0.35 else "middle"
+        median_income = float(z.get("median_household_income", 0.0) or 0.0)
+        if median_income >= 95000 and low_income_share < 0.25:
+            income_group = "high"
 
         agents.append(
             {
@@ -135,15 +164,27 @@ def build_agents(panel_path: Path, output: Path, sample: bool, num_agents: int |
                 "name": f"Traveler-{idx:03d}",
                 "archetype": archetype,
                 "home_zone": home_zone,
+                "origin_zone": home_zone,
+                "work_zone": destination_zone,
                 "destination_zone": destination_zone,
                 "trip_purpose": trip_purpose,
                 "preferred_mode": preferred_mode,
+                "income_group": income_group,
                 "rain_sensitivity": round(rain_sensitivity, 3),
                 "subway_accessibility": round(subway_access, 3),
+                "bus_accessibility": round(bus_access, 3),
                 "taxi_availability": round(taxi_availability, 3),
                 "cost_sensitivity": round(cost_sensitivity, 3),
                 "schedule_flexibility": round(schedule_flexibility, 3),
+                "commute_rigidity": round(commute_rigidity, 3),
+                "alternative_access": round(alternative_access, 3),
+                "transit_dependency": round(transit_dependency, 3),
+                "vehicle_access": round(vehicle_access, 3),
+                "walk_tolerance": round(walk_tolerance, 3),
                 "no_vehicle_share": round(no_vehicle_share, 3),
+                "zone_transit_commute_share": round(transit_share, 3),
+                "zone_bike_commute_share": round(bike_share, 3),
+                "zone_walk_commute_share": round(walk_share, 3),
                 "policy_receptiveness": round(rng.uniform(0.45, 0.90), 3),
             }
         )

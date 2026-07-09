@@ -120,8 +120,9 @@ def _check_columns(
 def validate_inputs(sample: bool) -> list[Check]:
     checks: list[Check] = []
     manifest = read_manifest()
+    optional_inputs = {"acs_zone_features", "bus", "bus_route_zone_map"}
     for key in manifest:
-        required = key != "acs_zone_features"
+        required = key not in optional_inputs
         checks.append(_check_paths(key, sample=sample, required=required))
 
     checks.extend(
@@ -167,6 +168,20 @@ def validate_inputs(sample: bool) -> list[Check]:
             "mta_station_zone_map",
             sample=sample,
             all_of=["station_complex_id", "zone_id"],
+        )
+    )
+    checks.extend(
+        _check_columns(
+            "acs_zone_features",
+            sample=sample,
+            all_of=[
+                "zone_id",
+                "median_household_income",
+                "no_vehicle_share",
+                "transit_commute_share",
+                "low_income_share",
+            ],
+            required=False,
         )
     )
     return checks
